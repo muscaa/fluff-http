@@ -1,0 +1,7 @@
+v1
+
+author muscaa
+id fluff-http
+depends muscaa/fluff-json
+url https://github.com/muscaa/fluff-http
+# class
