@@ -1,5 +1,7 @@
 package fluff.http.body;
 
+import fluff.http.HTTPException;
+
 /**
  * Represents the body of an HTTP request or response.
  */
@@ -17,8 +19,9 @@ public class HTTPBody {
      * @param <V> the type of the parsed result
      * @param parser the parser to use for parsing the body content
      * @return the parsed result
+     * @throws HTTPException if the bytes cannot be parsed
      */
-    public <V> V get(HTTPBodyParser<V> parser) {
+    public <V> V get(HTTPBodyParser<V> parser) throws HTTPException {
         return parser.parse(bytes);
     }
     

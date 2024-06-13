@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import fluff.http.HTTPException;
+
 /**
  * Represents the headers of an HTTP request or response.
  */
@@ -56,7 +58,7 @@ public class HTTPHead {
      * @return a list of all parsed values associated with the header
      * @throws HTTPException if the values cannot be parsed
      */
-    public <V> List<V> getAll(HTTPHeader<V> header) {
+    public <V> List<V> getAll(HTTPHeader<V> header) throws HTTPException {
         List<V> list = new ArrayList<>();
         for (String v : headers.get(header.getName())) {
             list.add(header.getValue(v));
@@ -73,7 +75,7 @@ public class HTTPHead {
      * @return the parsed value at the specified index, or null if the index is out of bounds
      * @throws HTTPException if the value cannot be parsed
      */
-    public <V> V get(HTTPHeader<V> header, int index) {
+    public <V> V get(HTTPHeader<V> header, int index) throws HTTPException {
         return header.getValue(get(header.getName(), index));
     }
     
@@ -85,7 +87,7 @@ public class HTTPHead {
      * @return the first parsed value of the header, or null if the header is not present
      * @throws HTTPException if the value cannot be parsed
      */
-    public <V> V get(HTTPHeader<V> header) {
+    public <V> V get(HTTPHeader<V> header) throws HTTPException {
         return get(header, 0);
     }
     

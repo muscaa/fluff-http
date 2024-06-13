@@ -45,8 +45,9 @@ public class HTTPRequest {
      * Creates the HttpRequest object.
      *
      * @return the built HttpRequest object
+     * @throws HTTPException if an error occurs
      */
-    protected HttpRequest create() {
+    protected HttpRequest create() throws HTTPException {
         HttpRequest.Builder request = HttpRequest.newBuilder()
                     .uri(uri);
         
