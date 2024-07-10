@@ -49,7 +49,7 @@ public class HTTPRequest {
      */
     protected HttpRequest create() throws HTTPException {
         HttpRequest.Builder request = HttpRequest.newBuilder()
-                    .uri(uri);
+        		.uri(uri);
         
         for (Map.Entry<String, List<String>> e : head.getHeaders().entrySet()) {
             for (String v : e.getValue()) {
