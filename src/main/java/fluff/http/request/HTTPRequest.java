@@ -87,7 +87,7 @@ public class HTTPRequest {
         try {
         	InputStreamRequest inputStreamRequest = create();
             HttpResponse<InputStream> response = http.getClient().send(inputStreamRequest.request, HttpResponse.BodyHandlers.ofInputStream());
-            inputStreamRequest.inputStream.close();
+            if (inputStreamRequest.inputStream != null) inputStreamRequest.inputStream.close();
             
             return new HTTPResponse(
                     http,
