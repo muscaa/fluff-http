@@ -35,7 +35,6 @@ public class HTTPBodyBuilder {
 	 * @return this builder instance
 	 * @throws HTTPException if an error occurs while serializing the value
 	 */
-	@SuppressWarnings("resource")
 	public <V> HTTPBodyBuilder append(HTTPBodyParser<V> parser, V value) throws HTTPException {
 		try {
 			InputStream in = parser.serialize(value);
@@ -44,6 +43,7 @@ public class HTTPBodyBuilder {
 			while ((read = in.read(buffer)) != -1) {
 				append(buffer, 0, read);
 			}
+			in.close();
 			return this;
 		} catch (IOException e) {
 			throw new HTTPException(e);

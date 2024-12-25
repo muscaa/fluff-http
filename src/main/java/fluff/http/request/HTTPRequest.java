@@ -51,7 +51,7 @@ public class HTTPRequest {
      * @return the built HttpRequest object
      * @throws HTTPException if an error occurs
      */
-    protected HttpRequest create() throws HTTPException {
+    protected InputStreamRequest create() throws HTTPException {
         HttpRequest.Builder request = HttpRequest.newBuilder()
         		.uri(uri);
         
@@ -63,12 +63,17 @@ public class HTTPRequest {
             }
         }
         
-        byte[] bytes = body.get(HTTPBodyParser.BYTES);
-        BodyPublisher bodyPublisher = bytes.length == 0 ? HttpRequest.BodyPublishers.noBody()
-                : HttpRequest.BodyPublishers.ofByteArray(bytes);
+        InputStreamRequest inputStreamRequest = new InputStreamRequest();
+        
+        BodyPublisher bodyPublisher = body.isEmpty() ? HttpRequest.BodyPublishers.noBody()
+                : HttpRequest.BodyPublishers.ofInputStream(() -> {
+                	inputStreamRequest.inputStream = body.getNoClose(HTTPBodyParser.INPUT_STREAM);
+                	return inputStreamRequest.inputStream;
+                });
         request.method(method.name(), bodyPublisher);
         
-        return request.build();
+        inputStreamRequest.request = request.build();
+        return inputStreamRequest;
     }
     
     /**
@@ -80,7 +85,9 @@ public class HTTPRequest {
     @SuppressWarnings("resource")
 	public HTTPResponse send() throws HTTPException {
         try {
-            HttpResponse<InputStream> response = http.getClient().send(create(), HttpResponse.BodyHandlers.ofInputStream());
+        	InputStreamRequest inputStreamRequest = create();
+            HttpResponse<InputStream> response = http.getClient().send(inputStreamRequest.request, HttpResponse.BodyHandlers.ofInputStream());
+            inputStreamRequest.inputStream.close();
             
             return new HTTPResponse(
                     http,
