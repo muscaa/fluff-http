@@ -1,10 +1,12 @@
 package fluff.http.request;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublisher;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -24,6 +26,8 @@ public class HTTPRequest {
     private final HTTP http;
     private final HTTPRequestMethod method;
     private final URI uri;
+    
+    protected Duration timeout = Duration.ofSeconds(15);
     
     protected HTTPHead head = HTTPHead.of();
     protected HTTPBody body = HTTPBody.of();
@@ -51,6 +55,8 @@ public class HTTPRequest {
         HttpRequest.Builder request = HttpRequest.newBuilder()
         		.uri(uri);
         
+        if (timeout != null) request.timeout(timeout);
+        
         for (Map.Entry<String, List<String>> e : head.getHeaders().entrySet()) {
             for (String v : e.getValue()) {
                 request.header(e.getKey(), v);
@@ -71,9 +77,10 @@ public class HTTPRequest {
      * @return the HTTP response
      * @throws HTTPException if an error occurs while sending the request
      */
-    public HTTPResponse send() throws HTTPException {
+    @SuppressWarnings("resource")
+	public HTTPResponse send() throws HTTPException {
         try {
-            HttpResponse<byte[]> response = http.getClient().send(create(), HttpResponse.BodyHandlers.ofByteArray());
+            HttpResponse<InputStream> response = http.getClient().send(create(), HttpResponse.BodyHandlers.ofInputStream());
             
             return new HTTPResponse(
                     http,
@@ -81,7 +88,7 @@ public class HTTPRequest {
                     response.uri(),
                     HTTPResponseStatus.byCode(response.statusCode()),
                     HTTPHead.of(response.headers().map()),
-                    HTTPBody.of(response.body())
+                    HTTPBody.of(HTTPBodyParser.INPUT_STREAM, response.body())
                     );
         } catch (IOException | InterruptedException e) {
             throw new HTTPException(e);
@@ -114,6 +121,26 @@ public class HTTPRequest {
     public URI getURI() {
         return uri;
     }
+    
+	/**
+	 * Returns the timeout of the request.
+	 *
+	 * @return the timeout
+	 */
+    public Duration getTimeout() {
+    	return timeout;
+    }
+    
+	/**
+	 * Sets the timeout of the request.
+	 *
+	 * @param timeout the timeout
+	 * @return this HTTPRequest instance
+	 */
+	public HTTPRequest setTimeout(Duration timeout) {
+		this.timeout = timeout;
+		return this;
+	}
     
     /**
      * Returns the HTTP headers of the request.

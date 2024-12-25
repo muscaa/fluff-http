@@ -1,5 +1,9 @@
 package fluff.http.body;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
 import fluff.http.HTTPException;
 import fluff.json.JSON;
 import fluff.json.JSONArray;
@@ -12,32 +16,128 @@ import fluff.json.JSONObject;
  */
 public interface HTTPBodyParser<V> {
 	
-    /**
-     * Parser that returns the body content as a byte array.
-     */
-    HTTPBodyParser<byte[]> BYTES = bytes -> bytes;
+	/**
+	 * Represents a parser for input streams. This does not handle input stream closing.
+	 */
+	HTTPBodyParser<InputStream> INPUT_STREAM = new HTTPBodyParser<>() {
+		@Override
+		public InputStream serialize(InputStream value) throws HTTPException, IOException {
+			return value;
+		}
+		
+		@Override
+		public InputStream deserialize(InputStream in) throws HTTPException, IOException {
+			return in;
+		}
+	};
+	
+	/**
+	 * Represents a parser for byte arrays.
+	 */
+    HTTPBodyParser<byte[]> BYTES = new HTTPBodyParser<>() {
+		@Override
+		public InputStream serialize(byte[] value) throws HTTPException, IOException {
+			return new ByteArrayInputStream(value);
+		}
+		
+		@Override
+		public byte[] deserialize(InputStream in) throws HTTPException, IOException {
+			return in.readAllBytes();
+		}
+    };
+    
+	/**
+	 * Represents a parser for strings.
+	 */
+    HTTPBodyParser<String> STRING = new HTTPBodyParser<>() {
+		@Override
+		public InputStream serialize(String value) throws HTTPException, IOException {
+			return BYTES.serialize(value.getBytes());
+		}
+		
+		@Override
+		public String deserialize(InputStream in) throws HTTPException, IOException {
+			return new String(BYTES.deserialize(in));
+		}
+    };
+    
+	/**
+	 * Represents a parser for JSON objects.
+	 */
+    HTTPBodyParser<JSONObject> JSON_OBJECT = new HTTPBodyParser<>() {
+		@Override
+		public InputStream serialize(JSONObject value) throws HTTPException, IOException {
+			return STRING.serialize(value.toString());
+		}
+		
+		@Override
+		public JSONObject deserialize(InputStream in) throws HTTPException, IOException {
+			return JSON.object(STRING.deserialize(in));
+		}
+    };
+    
+	/**
+	 * Represents a parser for JSON linked objects.
+	 */
+    HTTPBodyParser<JSONObject> JSON_LINKED_OBJECT = new HTTPBodyParser<>() {
+		@Override
+		public InputStream serialize(JSONObject value) throws HTTPException, IOException {
+			return JSON_OBJECT.serialize(value);
+		}
+		
+		@Override
+		public JSONObject deserialize(InputStream in) throws HTTPException, IOException {
+			return JSON.object(JSON::linkedObject, JSON::linkedArray, STRING.deserialize(in));
+		}
+    };
     
     /**
-     * Parser that returns the body content as a string.
+     * Represents a parser for JSON arrays.
      */
-    HTTPBodyParser<String> STRING = bytes -> new String(bytes);
+    HTTPBodyParser<JSONArray> JSON_ARRAY = new HTTPBodyParser<>() {
+		@Override
+		public InputStream serialize(JSONArray value) throws HTTPException, IOException {
+			return STRING.serialize(value.toString());
+		}
+		
+		@Override
+		public JSONArray deserialize(InputStream in) throws HTTPException, IOException {
+			return JSON.array(STRING.deserialize(in));
+		}
+    };
     
     /**
-     * Parser that returns the body content as a {@link JSONObject}.
+     * Represents a parser for JSON linked arrays.
      */
-    HTTPBodyParser<JSONObject> JSON_OBJECT = bytes -> JSON.object(STRING.parse(bytes));
+    HTTPBodyParser<JSONArray> JSON_LINKED_ARRAY = new HTTPBodyParser<>() {
+		@Override
+		public InputStream serialize(JSONArray value) throws HTTPException, IOException {
+			return JSON_ARRAY.serialize(value);
+		}
+		
+		@Override
+		public JSONArray deserialize(InputStream in) throws HTTPException, IOException {
+			return JSON.array(JSON::linkedObject, JSON::linkedArray, STRING.deserialize(in));
+		}
+    };
+    
+	/**
+	 * Serializes the given value into an input stream.
+	 *
+	 * @param value the value to serialize
+	 * @return the serialized input stream
+	 * @throws HTTPException if an error occurs during serialization
+	 * @throws IOException if an I/O error occurs
+	 */
+    InputStream serialize(V value) throws HTTPException, IOException;
     
     /**
-     * Parser that returns the body content as a {@link JSONArray}.
-     */
-    HTTPBodyParser<JSONArray> JSON_ARRAY = bytes -> JSON.array(STRING.parse(bytes));
-    
-    /**
-     * Parses the given byte array into an instance of type {@code V}.
+     * Deserializes the given input stream into a value.
      *
-     * @param bytes the byte array to parse
+     * @param in the input stream to parse
      * @return the parsed result
      * @throws HTTPException if an error occurs during parsing
+     * @throws IOException if an I/O error occurs
      */
-    V parse(byte[] bytes) throws HTTPException;
+    V deserialize(InputStream in) throws HTTPException, IOException;
 }
